@@ -1,0 +1,218 @@
+{
+  "name": "AtendeAI",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "atendeai-mensagem",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f96e7eed-107d-4147-9dd9-9281e40641bc",
+      "name": "Webhook",
+      "webhookId": "c79737c6-6ca7-409b-b93d-83dff3310eda"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45b28c82-098d-46af-ba63-bbbf743537d0",
+              "name": "mensagem",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "89344eb7-53b1-4aa6-88e3-c1a2fef3ee8b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"resposta\": {{ JSON.stringify($json.choices[0].message.content) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        752,
+        240
+      ],
+      "id": "50098ccc-eafa-4d82-90c8-a36e43e50ec4",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "=\n{{ JSON.stringify({\n  model: \"openai/gpt-oss-120b\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"Você é o AtendeAI da Nuvem Café. Responda em português brasileiro, com frases curtas, simples e naturais. Use a base de conhecimento recebida. Nunca invente produtos, preços, horários ou contatos. Se não souber, diga claramente. Em reclamações, demonstre empatia, faça uma pergunta por vez e informe que um atendente humano precisa analisar o caso. Não prometa troca ou reembolso.Não ofereça encaminhar, transferir ou registrar solicitações, pois o sistema ainda não possui essa funcionalidade. Quando não souber uma informação, explique isso de forma breve e educada.\"\n    },\n    {\n      role: \"user\",\n      content: $json.mensagem_com_contexto\n    }\n  ],\n  temperature: 0.4,\n  max_tokens: 500\n}) }}\n",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        688,
+        -64
+      ],
+      "id": "ec16e0ef-d528-4102-af79-e2e890c099fe",
+      "name": "HTTP Request",
+      "executeOnce": false,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DRZMTP0bXfg3x83X",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afa38f20-9af0-435e-8c6f-23afa15a1bfc",
+              "name": "base_conhecimento",
+              "value": " {   \"loja\": \"Nuvem Café\",   \"horarios_confirmados\": {     \"sabado\": \"9h às 14h\"   },   \"produtos\": [],   \"precos\": [],   \"canais_de_contato\": [],   \"politica_de_troca\": null,   \"politica_de_reembolso\": null }",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        176
+      ],
+      "id": "b9222311-7e42-498b-a944-a6e2b2b9a821",
+      "name": "Base de conhecimentos"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "af514579-66ce-4833-b771-db66c3ec5c2b",
+              "name": "=mensagem_com_contexto",
+              "value": "= {{ $json.mensagem + \"\\nBase de conhecimento da loja: \" + JSON.stringify($json.base_conhecimento) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        448,
+        16
+      ],
+      "id": "911b38b9-8923-433d-9a06-1cc0cb3a657f",
+      "name": "Preparar mensagem"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Base de conhecimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base de conhecimentos": {
+      "main": [
+        [
+          {
+            "node": "Preparar mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar mensagem": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c9e2a8d5-bb6b-4fea-9bf1-b48ad80e9613",
+  "meta": {
+    "instanceId": "205af0f243670d6789688f93681dc7d17dd2fdbcdca5bf0422bd57ad1a3e8534"
+  },
+  "nodeGroups": [],
+  "id": "X7EOfqwd27EIYgmu",
+  "tags": []
+}

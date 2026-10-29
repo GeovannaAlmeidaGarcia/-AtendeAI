@@ -1,0 +1,18 @@
+
+{
+  "loja": "Nuvem Café",
+  "horarios_confirmados": {
+    "sabado": "9h às 14h"
+  },
+  "produtos": [],
+  "precos": [],
+  "canais_de_contato": [],
+  "politica_de_troca": null,
+  "politica_de_reembolso": null,
+  "regras": [
+    "Não inventar informações.",
+    "Informar quando não souber uma resposta.",
+    "Em reclamações, demonstrar empatia e fazer uma pergunta por vez.",
+    "Não prometer soluções ou contato de um atendente."
+  ]
+}
